@@ -3,7 +3,6 @@ from PIL import Image
 
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 
 # 関数定義 入力画像を引数の座標だけ取り出し，表示するする
 def CutImage(img, top, bottom, left, right, name):
