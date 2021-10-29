@@ -3,12 +3,11 @@
 [![IMAGE ALT TEXT HERE](https://jphacks.com/wp-content/uploads/2021/07/JPHACKS2021_ogp.jpg)](https://www.youtube.com/watch?v=LUPQFB4QyVo)
 
 ## 製品概要
+画像処理と手打ち入力による行列検算アプリ
 ### 背景(製品開発のきっかけ、課題等）
+
 ### 製品説明（具体的な製品の説明）
 ### 特長
-####1. 特長1
-####2. 特長2
-####3. 特長3
 
 ### 解決出来ること
 ### 今後の展望
