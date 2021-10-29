@@ -1,7 +1,7 @@
 import numpy as np # numpyモジュールのインポート
 import numpy.linalg as LA # linalgモジュールはLAとしてimportするのが慣例。
 
-matrix = "4" #0は足し算、1は引き算、2は内積、3は外積、その他は固有値、固有ベクトル
+matrix = "0" #0は足し算、1は引き算、2は内積、3は外積、その他は固有値、固有ベクトル
 if matrix == "0":
   input_num_e1 = 1
   input_num_e2 = 2
