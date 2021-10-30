@@ -1,29 +1,30 @@
 import streamlit as st
 from PIL import Image
-
 import cv2
 import numpy as np
+import numpy.linalg as LA # linalgモジュールはLAとしてimportするのが慣例。
+import pyocr
+import pyocr.builders
+import os
+import re
 
-# 関数定義 入力画像を引数の座標だけ取り出し，表示するする
+
+# 関数定義 入力画像を引数の座標だけ取り出し，返す
 def CutImage(img, top, bottom, left, right, name):
     img2 = img.copy()
     img2 = img2[top : bottom, left : right]
-    st.image(img2, caption="計算する行列の要素", use_column_width=True)
-    #cv2.imwrite(name + '.png', img2)
+    #st.image(img2, caption="計算する行列の要素", use_column_width=True)
+    return img2
 
 st.title('行列検算アプリ MatCheck')
-
-uploaded_file = st.file_uploader("画像を選んでください", type="png")
+st.header("LaTeX画像による認識")
+uploaded_file = st.file_uploader("画像(.png)を選択してください。", type="png")
 if uploaded_file is not None:
     img = Image.open(uploaded_file)
     img_rgb = np.array(img, dtype=np.uint8)
-    #img_rgb = cv2.imread()
     st.image(img_rgb, caption="入力画像", use_column_width=True)
 
     # InputImage
-    #img_rgb = cv2.imread('img_data/gyouretu.png')
-    #img_rgb = cv2.imread('img_data/Matrix.png')
-    #img_rgb = cv2.imread('img_data/Object4.png')
     img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
     # templates
     template1 = cv2.imread('img_data/LeftBracket.png', 0)
@@ -97,7 +98,251 @@ if uploaded_file is not None:
             successFlag2 = True
         # 2つの行列を発見することができた場合
         if successFlag1 == True and successFlag2 == True:
-            print("OK")
-            CutImage(img_rgb, coordinatesA_top, coordinatesA_bottom, coordinatesA_left, coordinatesA_right, "matrix1")
-            CutImage(img_rgb, coordinatesB_top, coordinatesB_bottom, coordinatesB_left, coordinatesB_right, "matrix2")
+            #print("OK")
+            PreprocessedImage1 = CutImage(img_rgb, coordinatesA_top, coordinatesA_bottom, coordinatesA_left, coordinatesA_right, "matrix1")
+            PreprocessedImage2 = CutImage(img_rgb, coordinatesB_top, coordinatesB_bottom, coordinatesB_left, coordinatesB_right, "matrix2")
             break
+        
+    # OCRによる読み取りを行う
+    # インストール済みのTesseractへパスを通す
+    path_tesseract = os.getcwd() + "\lib"
+    if path_tesseract not in os.environ["PATH"].split(os.pathsep):
+        os.environ["PATH"] += os.pathsep + path_tesseract 
+
+    # #グレースケールに変更
+    # image_path = r'C:\Users\tatsuya\Desktop\code\python\eq_rec\gyouretu.png'
+    # gray = cv2.imread(image_path, 0)
+    # cv2.imwrite('gray_image.png', gray)
+    
+    # OCRエンジンの取得
+    tools = pyocr.get_available_tools()
+    print(tools)
+    tool = tools[0]
+    
+    # 画像の読み込み。
+    img_org1 = Image.fromarray(PreprocessedImage1)
+    img_org2 = Image.fromarray(PreprocessedImage2)
+
+    # OCRの実行
+    builder = pyocr.builders.WordBoxBuilder(tesseract_layout=6)
+    # builder = pyocr.builders.TextBuilder(tesseract_layout=6)
+    result1 = tool.image_to_string(img_org1, lang="eng", builder=builder)
+    result2 = tool.image_to_string(img_org2, lang="eng", builder=builder)
+
+    # 識別した行列を確認する
+    st.subheader("識別した行列")
+    st.markdown("行列A")
+    col1A, col2A = st.columns(2)
+    st.markdown("行列B")
+    col1B, col2B = st.columns(2)
+    with col1A:
+        matA11 = st.text_input('A11', value=re.sub('[^0-9]*', '', result1[0].content))
+        matA21 = st.text_input('A21', value=re.sub('[^0-9]*', '', result1[2].content))
+    with col2A:
+        matA12 = st.text_input('A12', value=re.sub('[^0-9]*', '', result1[1].content))
+        matA22 = st.text_input('A22', value=re.sub('[^0-9]*', '', result1[3].content))
+    with col1B:
+        matB11 = st.text_input('B11', value=re.sub('[^0-9]*', '', result2[0].content))
+        matB21 = st.text_input('B21', value=re.sub('[^0-9]*', '', result2[2].content))
+    with col2B:
+        matB12 = st.text_input('B12', value=re.sub('[^0-9]*', '', result2[1].content))
+        matB22 = st.text_input('B22', value=re.sub('[^0-9]*', '', result2[3].content))
+    
+    #演算を選択
+    ope = st.radio("行う演算を選択", ('和','差', '内積', '固有値/固有ベクトル'))
+    # 確認ボタン
+    ConfirmedClick = st.button("確認")
+    # 数字か判定
+    if re.search('[0~9]+', matA11) == False:
+        ConfirmedClick = False
+    if re.search('[0~9]+', matA12) == False:
+        ConfirmedClick = False
+    if re.search('[0~9]+', matA21) == False:
+        ConfirmedClick = False
+    if re.search('[0~9]+', matA22) == False:
+        ConfirmedClick = False
+    if re.search('[0~9]+', matB11) == False:
+        ConfirmedClick = False
+    if re.search('[0~9]+', matB12) == False:
+        ConfirmedClick = False
+    if re.search('[0~9]+', matB21) == False:
+        ConfirmedClick = False
+    if re.search('[0~9]+', matB22) == False:
+        ConfirmedClick = False
+    # 数字の確認がとれた場合
+    if  ConfirmedClick == True :
+        # int型への変換を行う
+        matA11 = (int)(matA11)
+        matA12 = (int)(matA12)
+        matA21 = (int)(matA21)
+        matA22 = (int)(matA22)
+        matB11 = (int)(matB11)
+        matB12 = (int)(matB12)
+        matB21 = (int)(matB21)
+        matB22 = (int)(matB22)
+        #演算を行う
+        if ConfirmedClick == True :
+            
+            if ope == '和':
+
+                e = np.array([[matA11, matA12], [matA21, matA22]])
+                f = np.array([[matB11, matB12], [matB21, matB22]]) #２つの行列の足し算
+
+                g = e + f
+
+                st.write(g)
+                print(g)
+
+            elif ope == '差':
+                
+                h = np.array([[matA11, matA12], [matA21, matA22]])
+                i = np.array([[matB11, matB12], [matB21, matB22]]) #２つの行列の引き算
+                j = h - i
+
+                st.write(j)
+                print(j)
+
+            elif ope == '内積':
+                a = np.array([[matA11, matA12], [matA21, matA22]])
+                b = np.array([[matB11, matB12], [matB21, matB22]])
+                np.dot(a,b) #行列の内積
+
+                print(np.dot(a,b))
+                st.write(np.dot(a,b))
+
+
+            elif ope == '固有値/固有ベクトル':
+                
+                d1 = np.array([[matA11, matA12], [matA21, matA22]])
+                d2 = np.array([[matB11, matB12], [matB21, matB22]])
+
+                w1,v1 = LA.eig(d1) # この場合ではwが固有値、vが固有ベクトルに相当する。
+                w2,v2 = LA.eig(d2)
+                
+                st.write('固有値')
+                st.write(w1)
+                st.write(w2)
+                st.write('固有ベクトル')
+                st.write(v1)
+                st.write(v2)
+
+if uploaded_file is None:
+    st.header("キーボード入力による演算")
+    st.subheader("行列Aと行列Bを定義")
+
+    col1, col2, col3, col4, col5, = st.columns(5)
+
+
+
+    with col1:
+        text11 = st.text_input('A11', )
+        text21 = st.text_input('A21', )
+        
+
+    with col2:
+        text12 = st.text_input('A12', )
+        text22 = st.text_input('A22', )
+        
+
+    with col3:
+        st.text('|          |')
+        st.text('|          |')
+        st.text('|          |')
+        st.text('|          |')
+        st.text('|          |')
+        st.text('|          |')
+        
+
+    with col4:
+        text15 = st.text_input('B11', )
+        text25 = st.text_input('B21', )
+
+    with col5:
+        text16 = st.text_input('B12', )
+        text26 = st.text_input('B22', )
+
+
+    #0は足し算、1は引き算、2は内積、3は外積、その他は固有値、固有ベクトル
+
+    matrix = st.radio("行う演算を選択して下さい。",('和', '差', '内積', '固有値/固有ベクトル'))
+    # 確認ボタン
+    ConfirmedClick2 = st.button("確認")
+
+    if ConfirmedClick2 == True :
+
+        if matrix == '和':
+            text11 = int(text11)
+            text21 = int(text21)
+            text12 = int(text12)
+            text22 = int(text22)
+            text15 = int(text15)
+            text25 = int(text25)
+            text16 = int(text16)
+            text26 = int(text26)
+
+            e = np.array([[text11, text12], [text21, text22]])
+            f = np.array([[text15, text16], [text25, text26]]) #２つの行列の足し算
+
+            g = e + f
+
+            st.write(g)
+            print(g)
+
+        elif matrix == '差':
+            text11 = int(text11)
+            text21 = int(text21)
+            text12 = int(text12)
+            text22 = int(text22)
+            text15 = int(text15)
+            text25 = int(text25)
+            text16 = int(text16)
+            text26 = int(text26)
+
+            h = np.array([[text11, text12], [text21, text22]])
+            i = np.array([[text15, text16], [text25, text26]]) #２つの行列の引き算
+            j = h - i
+
+            st.write(j)
+            print(j)
+
+        elif matrix == '内積':
+            text11 = int(text11)
+            text21 = int(text21)
+            text12 = int(text12)
+            text22 = int(text22)
+            text15 = int(text15)
+            text25 = int(text25)
+            text16 = int(text16)
+            text26 = int(text26)
+
+            a = np.array([[text11, text12], [text21, text22]]) #中に数字を入れる
+            b = np.array([[text15, text16], [text25, text26]])
+            np.dot(a,b) #行列の内積
+
+            print(np.dot(a,b))
+            st.write(np.dot(a,b))
+
+
+        elif matrix == '固有値/固有ベクトル':
+            text11 = int(text11)
+            text21 = int(text21)
+            text12 = int(text12)
+            text22 = int(text22)
+            text15 = int(text15)
+            text25 = int(text25)
+            text16 = int(text16)
+            text26 = int(text26)
+            
+            d1 = np.array([[text11 ,text12], [text21, text22]]) # 2×2の行列で試す。
+            d2 = np.array([[text15 ,text16], [text25, text26]])
+
+
+            w1,v1 = LA.eig(d1) # この場合ではwが固有値、vが固有ベクトルに相当する。
+            w2,v2 = LA.eig(d2)
+            
+            st.write('固有値')
+            st.write(w1)
+            st.write(w2)
+            st.write('固有ベクトル')
+            st.write(v1)
+            st.write(v2)
