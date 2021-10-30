@@ -1,6 +1,6 @@
 # 行列検算アプリ「MatCheck」
 
-[![MatCheck](https://user-images.githubusercontent.com/63656006/139519995-5c35f264-4f29-4eed-9abc-5ee794f60245.png)](https://www.youtube.com/watch?v=LUPQFB4QyVo)
+[![MatCheck](https://user-images.githubusercontent.com/63656006/139519995-5c35f264-4f29-4eed-9abc-5ee794f60245.png)](https://youtu.be/0wEfWpnTrw4)
 
 ## 製品概要
 ### 背景(製品開発のきっかけ、課題等）
