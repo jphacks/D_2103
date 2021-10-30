@@ -1,6 +1,6 @@
 # 行列検算アプリ「MatCheck」
 
-[![IMAGE ALT TEXT HERE](https://jphacks.com/wp-content/uploads/2021/07/JPHACKS2021_ogp.jpg)](https://www.youtube.com/watch?v=LUPQFB4QyVo)
+[![MatCheck](https://user-images.githubusercontent.com/63656006/139519995-5c35f264-4f29-4eed-9abc-5ee794f60245.png)](https://www.youtube.com/watch?v=LUPQFB4QyVo)
 
 ## 製品概要
 ### 背景(製品開発のきっかけ、課題等）
